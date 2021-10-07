@@ -6,7 +6,8 @@ const path = require('path');
 const {makeExecutableSchema} = require("@graphql-tools/schema");
 const {mergeTypeDefs, mergeResolvers} = require('@graphql-tools/merge');
 const { loadFilesSync } = require("@graphql-tools/load-files");
-require('dotenv').config()
+require('dotenv').config();
+const {authCheck} = require('./utils/auth')
 
 
 // db
@@ -44,7 +45,8 @@ const startApolloServer = async (typeDefs, resolvers) => {
     // Apollo server
     const apolloServer = new ApolloServer({
         typeDefs,
-        resolvers
+        resolvers,
+        context: ({req, res}) => ({req, res})
     })
 
     // More required logic for integrating with Express
@@ -53,7 +55,7 @@ const startApolloServer = async (typeDefs, resolvers) => {
     apolloServer.applyMiddleware({app})
 
     // rest api endpoint
-    app.get('/rest', (req, res) =>{
+    app.get('/rest',authCheck, (req, res) =>{
         res.json({
             data: "Hello World!"
         })
