@@ -18,11 +18,24 @@ const createUser = async (parent, args, {req}) => {
     }).save();
 }
 
+const updateUser = async (_, args, {req}) => {
+    const currentUser = await authCheck(req);
+    console.log('args:', args);
+    const updatedUser = await User.findOneAndUpdate(
+        {email: currentUser.email}, 
+        {...args.input}, 
+        {new: true}
+    ).exec();
+
+    return updatedUser;
+}
+
 module.exports = {
     Query: {
         me: me
     },
     Mutation: {
-        createUser
+        createUser,
+        updateUser
     }
 }
