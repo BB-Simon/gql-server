@@ -16,6 +16,15 @@ exports.authCheck = async (req) => {
        throw new Error('Invalid or expired token!');
    }
 }
+exports.authCheckMiddleware = async (req, res, next) => {
+   try {
+     await admin.auth().verifyIdToken(req.headers.authtoken);
+     next();
+   } catch (error) {
+       console.log('AUTH CHECK ERROR', error);
+       res.jsson({error: error.message});
+   }
+}
 
 
 

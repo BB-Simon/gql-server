@@ -6,8 +6,11 @@ const path = require('path');
 const {makeExecutableSchema} = require("@graphql-tools/schema");
 const {mergeTypeDefs, mergeResolvers} = require('@graphql-tools/merge');
 const { loadFilesSync } = require("@graphql-tools/load-files");
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const cloudinary = require('cloudinary').v2;
 require('dotenv').config();
-const {authCheck} = require('./utils/auth')
+const {authCheck, authCheckMiddleware} = require('./utils/auth')
 
 
 // db
@@ -39,6 +42,12 @@ const resolvers = mergeResolvers(loadFilesSync(path.join(__dirname, "./resolvers
 const startApolloServer = async (typeDefs, resolvers) => {
     // express server
     const app = express()
+
+    // middlewares
+    app.use(cors());
+    app.use(express.json({limit: "5mb"}))
+
+
     // server
     const httpserver = http.createServer(app)
 
@@ -55,10 +64,46 @@ const startApolloServer = async (typeDefs, resolvers) => {
     apolloServer.applyMiddleware({app})
 
     // rest api endpoint
-    app.get('/rest',authCheck, (req, res) =>{
+    app.get('/rest', authCheckMiddleware, (req, res) =>{
         res.json({
             data: "Hello World!"
         })
+    })
+
+    // cloudinay config
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    })
+
+    // upload images to cloudinary server
+    app.post('/uploadimage', authCheckMiddleware, async(req, res)=> {
+        try {
+            const result = await cloudinary.uploader.upload(req.body.image, {
+                public_id: `${Date.now}`, // public name
+                resource_type: "auto"     // JPEG, PNG
+            })
+
+            res.send({
+                url: result.url,
+                public_id: result.public_id
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    })
+
+    // remove image from cloudinary
+    app.post('removeimage', authCheckMiddleware, async(req, res) =>{
+        const image_id = req.body.public_id
+        try {
+            const result = await cloudinary.uploader.destroy(image_id);
+            res.send("ok")
+        } catch (error) {
+            console.log(error);
+            res.json({success: false, error})
+        }
     })
 
     // port
