@@ -30,7 +30,16 @@ const createPost = async (_, args, { req }) => {
 };
 
 const allPosts = async (_, args) => {
-	return await Post.find({}).populate("postedBy", "_id username").exec();
+	return await Post.find({})
+		.sort({ createdAt: -1 })
+		.populate("postedBy", "_id username")
+		.exec();
+};
+
+const singlePost = async (_, args) => {
+	return await Post.findById({ _id: args.postId })
+		.populate("postedBy", "_id username")
+		.exec();
 };
 
 const postsByUser = async (_, args, { req }) => {
@@ -41,12 +50,62 @@ const postsByUser = async (_, args, { req }) => {
 		.sort({ createdAt: -1 });
 };
 
+const updatePost = async (_, args, { req }) => {
+	const currentUser = await authCheck(req);
+
+	// validate
+	if (args.input.content.trim() === "")
+		throw new Error("Conetent is required!");
+
+	// get user from db based on currentUser email
+	const user = await User.findOne({ email: currentUser.email }).exec();
+
+	// get the post by _id to update
+	const postToUpdate = await Post.findById({ _id: args.input._id }).exec();
+
+	// if post' postedByUser's _id and user's _id is same, allow to update
+	if (user._id.toString() !== postToUpdate.postedBy._id.toString())
+		throw new Error("Unauthorized action!");
+	const updatedPost = await Post.findByIdAndUpdate(
+		args.input._id,
+		{ ...args.input },
+		{ new: true }
+	)
+		.exec()
+		.then((post) => post.populate("postedBy", "_id username"));
+
+	return updatedPost;
+};
+const deletePost = async (_, args, { req }) => {
+	const currentUser = await authCheck(req);
+
+	// get user from db based on currentUser email
+	const user = await User.findOne({ email: currentUser.email }).exec();
+
+	// get the post by _id to delete
+	const postToDelete = await Post.findById({ _id: args.postId }).exec();
+
+	// if post' postedByUser's _id and user's _id is same, allow to update
+	if (user._id.toString() !== postToDelete.postedBy._id.toString())
+		throw new Error("Unauthorized action!");
+	const deletedPost = await Post.findByIdAndDelete({ _id: args.postId }).exec();
+
+	return deletedPost;
+};
+
+const totalPosts = async (_, args) =>
+	await Post.find({}).estimatedDocumentCount().exec();
+
 module.exports = {
 	Query: {
+		totalPosts,
 		allPosts,
 		postsByUser,
+		singlePost,
 	},
 	Mutation: {
 		createPost,
+		updatePost,
+		deletePost,
 	},
 };

@@ -9,8 +9,10 @@ module.exports = gql`
 	}
 
 	type Query {
+		totalPosts: Int!
 		allPosts: [Post!]!
 		postsByUser: [Post!]!
+		singlePost(postId: String!): Post!
 	}
 
 	# input types
@@ -18,9 +20,17 @@ module.exports = gql`
 		content: String!
 		image: ImageInput
 	}
+	# input types
+	input UpdatePostInput {
+		_id: String!
+		content: String!
+		image: ImageInput
+	}
 
 	# mutations
 	type Mutation {
 		createPost(input: CreatePostInput!): Post!
+		updatePost(input: UpdatePostInput!): Post!
+		deletePost(postId: String!): Post!
 	}
 `;
