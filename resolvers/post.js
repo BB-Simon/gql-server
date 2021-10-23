@@ -30,7 +30,11 @@ const createPost = async (_, args, { req }) => {
 };
 
 const allPosts = async (_, args) => {
+	const currentPage = args.page || 1;
+	const perPage = 3;
 	return await Post.find({})
+		.skip((currentPage -1) * perPage)
+		.limit(perPage)
 		.sort({ createdAt: -1 })
 		.populate("postedBy", "_id username")
 		.exec();
