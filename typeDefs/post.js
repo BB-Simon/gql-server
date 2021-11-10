@@ -13,6 +13,7 @@ module.exports = gql`
 		allPosts(page: Int): [Post!]!
 		postsByUser: [Post!]!
 		singlePost(postId: String!): Post!
+		search(query: String):[Post]
 	}
 
 	# input types

@@ -6,6 +6,7 @@ const postSchema = new monggose.Schema(
 		content: {
 			type: String,
 			required: "Content is required",
+			text: true
 		},
 		image: {
 			url: {

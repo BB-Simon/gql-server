@@ -1,5 +1,5 @@
 const express = require("express");
-const { ApolloServer } = require("apollo-server-express");
+const { ApolloServer, PubSub } = require("apollo-server-express");
 const mongoose = require("mongoose");
 const http = require("http");
 const path = require("path");
@@ -40,6 +40,7 @@ const resolvers = mergeResolvers(
 );
 
 const startApolloServer = async (typeDefs, resolvers) => {
+	const pubsub = new PubSub();
 	// express server
 	const app = express();
 
@@ -54,7 +55,7 @@ const startApolloServer = async (typeDefs, resolvers) => {
 	const apolloServer = new ApolloServer({
 		typeDefs,
 		resolvers,
-		context: ({ req, res }) => ({ req, res }),
+		context: ({ req, pubsub }) => ({ req, pubsub }),
 	});
 
 	// More required logic for integrating with Express

@@ -100,12 +100,19 @@ const deletePost = async (_, args, { req }) => {
 const totalPosts = async (_, args) =>
 	await Post.find({}).estimatedDocumentCount().exec();
 
+const search = async (_, {query}) => {
+	return await Post.find({$text: {$search: query}})
+		.populate('postedBy', "username")
+		.exec();
+}
+
 module.exports = {
 	Query: {
 		totalPosts,
 		allPosts,
 		postsByUser,
 		singlePost,
+		search
 	},
 	Mutation: {
 		createPost,
